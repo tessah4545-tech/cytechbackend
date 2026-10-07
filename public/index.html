@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CyTech Admin</title><style>
+body{margin:0;font-family:monospace;background:#050a08;color:#00ff9c;padding:16px}
+h1{color:#00ffe1}.card{background:#0a1410;border:1px solid #0f3;border-radius:8px;padding:14px;margin:10px 0}
+input,textarea,button{background:#000;border:1px solid #0f6;color:#00ff9c;padding:8px;margin:4px 0;width:100%;box-sizing:border-box;border-radius:4px}
+button{cursor:pointer;background:#022;color:#00ffe1;font-weight:bold}button:hover{background:#044}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #073;padding:5px;text-align:left}
+.ok{color:#0f0}.pend{color:#ff0}.fail{color:#f55}#app{display:none}.big{font-size:28px;color:#00ffe1}
+</style></head><body>
+<div id="login" class="card" style="max-width:360px;margin:80px auto"><h1>CYTECH ADMIN</h1>
+<input id="le" placeholder="Admin email"><input id="lp" type="password" placeholder="Password">
+<button onclick="doLogin()">LOGIN</button><div id="lerr" class="fail"></div></div>
+<div id="app"><h1>CYTECH ADMIN CONSOLE</h1>
+<div class="card"><b>WALLET TOTAL: </b><span class="big" id="wtot">0</span> KES
+<div id="dbstat"></div><button onclick="loadAll()">REFRESH</button><button onclick="backup()">FORCE BACKUP TO NEON</button></div>
+<div class="card"><b>Broadcast / Applicant Message (venue & class times)</b>
+<textarea id="note" rows="3" placeholder="Message to all applicants..."></textarea>
+<button onclick="sendMsg()">SEND TO APPLICANTS</button></div>
+<div class="card"><b>Admin Note shown on student portal</b>
+<textarea id="anote" rows="3"></textarea><b>Practical target URL</b>
+<input id="purl"><button onclick="saveSettings()">SAVE SETTINGS</button></div>
+<div class="card"><b>Successful Payments</b><div id="succ"></div></div>
+<div class="card"><b>Pending</b><div id="pend" class="pend"></div></div>
+<div class="card"><b>Failed / Cancelled</b><div id="fail" class="fail"></div></div>
+<div class="card"><b>Course Applications</b><div id="apps"></div></div>
+<div class="card"><b>Users</b><div id="users"></div></div></div>
+<script>
+const B=location.origin;let T=localStorage.cyt_admin||'';
+function tbl(a,c){if(!a.length)return'<i>none</i>';return'<table><tr>'+c.map(x=>'<th>'+x+'</th>').join('')+'</tr>'+a.map(r=>'<tr>'+c.map(x=>'<td>'+(r[x]!==undefined?r[x]:'')+'</td>').join('')+'</tr>').join('')+'</table>'}
+async function api(p,m,b){const r=await fetch(B+p,{method:m||'GET',headers:{'Content-Type':'application/json',Authorization:'Bearer '+T},body:b?JSON.stringify(b):undefined});return r.json()}
+async function doLogin(){const r=await api('/api/admin/login','POST',{email:le.value,password:lp.value});if(r.token){T=r.token;localStorage.cyt_admin=T;login.style.display='none';app.style.display='block';loadAll()}else lerr.textContent=r.error||'Login failed'}
+async function loadAll(){const d=await api('/api/admin/overview');if(d.error){login.style.display='block';app.style.display='none';return}
+login.style.display='none';app.style.display='block';
+wtot.textContent=d.wallet.total;dbstat.innerHTML='Neon DB: '+(d.db.neon?'<span class=ok>CONNECTED</span>':'<span class=fail>LOCAL FALLBACK</span>')+' | users: '+d.db.users+' | txns: '+d.db.txns;
+succ.innerHTML=tbl(d.wallet.success.map(t=>({email:t.email,purpose:t.purpose,amount:t.amount,ref:t.reference,when:new Date(t.createdAt).toLocaleString()})),['email','purpose','amount','ref','when']);
+pend.innerHTML=tbl(d.wallet.pending.map(t=>({email:t.email,purpose:t.purpose,amount:t.amount,ref:t.reference})),['email','purpose','amount','ref']);
+fail.innerHTML=tbl(d.wallet.failed.map(t=>({email:t.email,purpose:t.purpose,amount:t.amount,ref:t.reference})),['email','purpose','amount','ref']);
+apps.innerHTML=tbl(d.applications.map(a=>({email:a.email,status:a.status,when:new Date(a.createdAt).toLocaleString()})),['email','status','when']);
+users.innerHTML=tbl(d.users.map(u=>({name:u.name,email:u.email,role:u.role})),['name','email','role']);
+anote.value=d.settings.adminNote||'';purl.value=d.settings.practicalUrl||''}
+async function saveSettings(){await api('/api/admin/settings','POST',{adminNote:anote.value,practicalUrl:purl.value});alert('Saved')}
+async function sendMsg(){await api('/api/admin/message','POST',{message:note.value});alert('Sent');note.value=''}
+async function backup(){const r=await api('/api/admin/backup','POST',{});alert('Backup '+(r.neon?'to Neon OK':'local only'))}
+if(T){login.style.display='none';app.style.display='block';loadAll()}
+</script></body></html>

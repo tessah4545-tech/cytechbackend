@@ -1,0 +1,9 @@
+CyTech App - ios build
+=====================
+1. Wrap the frontend (https://your-frontend.vercel.app) as a native app:
+   - windows: Electron -> npm i -g electron-packager ; electron-packager . CyTech --platform=win32 --arch=x64  (output .exe installer via electron-winstaller / Inno Setup)
+   - android: Capacitor -> npm i @capacitor/core @capacitor/cli ; npx cap add android ; npx cap build android  (Android Studio -> Build APK/AAB for Play Store)
+   - mac: Electron -> electron-packager . CyTech --platform=darwin ; package with electron-builder -> .dmg
+   - ios: Capacitor -> npx cap add ios ; build in Xcode on a Mac (Apple Developer account required)
+2. The app loads the same site; signup/login/payments all work inside it.
+3. Install/uninstall, clear cache/data behave like WhatsApp/Instagram via the OS app manager.
