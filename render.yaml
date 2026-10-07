@@ -1,14 +1,14 @@
 services:
   - type: web
-    name: cytech-backend
+    name: cytechbackend
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: node server.js
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
-        value: 20
+        value: 22
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
@@ -25,3 +25,7 @@ services:
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://cytech-frontend-frontend.vercel.app
